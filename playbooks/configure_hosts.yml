@@ -1,0 +1,47 @@
+- name: Prepare RHEL host for Ansible management
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install required packages
+      yum:
+        name:
+          - openssh-server
+          - python3
+        state: present
+
+    - name: Ensure SSH service is running
+      service:
+        name: sshd
+        state: started
+        enabled: yes
+
+    - name: Allow SSH through the firewall
+      firewalld:
+        service: ssh
+        permanent: true
+        state: enabled
+      notify: Reload firewall
+
+    - name: Copy /etc/hosts file to host
+      ansible.builtin.copy:
+        src: ~/ansible/config_files/hosts
+        dest: /etc/hosts
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Add dboyd user to host
+      user:
+        name: dboyd
+        groups: wheel
+        append: yes
+        generate_ssh_key: yes
+        ssh_key_bits: 2048
+        ssh_key_file: .ssh/id_rsa
+
+    - name: Add dboyd (on bastion host) public ssh key to host
+      authorized_key:
+        user: dboyd
+  handlers:
+    - name: Reload firewall
+      command: firewall-cmd --reload

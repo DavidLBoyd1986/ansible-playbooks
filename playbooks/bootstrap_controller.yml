@@ -1,0 +1,114 @@
+---
+- name: Bootstraps the controller with required configurations
+  hosts: localhost
+  become: true
+  tasks:
+  - name: Create ansible User
+    user:
+      name: ansible
+      shell: /bin/bash
+      state: present
+      groups: wheel
+      append: yes
+      generate_ssh_key: yes
+      ssh_key_bits: 2048
+      ssh_key_file: .ssh/id_rsa
+
+  - name: Create normal User
+    user:
+      name: "{{ username }}"
+      shell: /bin/bash
+      state: present
+      groups: wheel
+      append: yes
+      generate_ssh_key: yes
+      ssh_key_bits: 2048
+      ssh_key_file: .ssh/id_rsa
+
+  - name: Configure normal User to sudo ansible User
+    lineinfile:
+      path: /etc/sudoers.d/sudo-ansible
+      line: "{{ username }} ALL=(ansible) ALL"
+      state: present
+      create: true
+
+  - name: Create the /home/dboyd/ansible directory
+    file:
+      path: /home/{{ username }}/ansible
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      state: directory
+
+  - name: Create the /home/dboyd/ansible/inventory directory
+    file:
+      path: /home/{{ username }}/ansible/inventory
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      state: file
+
+  - name: Create the /home/dboyd/ansible/playbooks directory
+    file:
+      path: /home/{{ username }}/ansible/playbooks
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      state: directory
+
+  - name: Create the /home/dboyd/ansible/config_files directory
+    file:
+      path: /home/{{ username }}/ansible/config_files
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      state: directory
+
+  - name: Create/update the ansible.cfg file in multiple locations
+    copy:
+      dest: "{{ item }}"
+      content: |
+       [defaults]
+       inventory = /home/{{ username }}/ansible/inventory
+       remote_user = ansible
+       host_key_checking = False
+       timeout = 30
+
+       [privilege_escalation]
+       become = True
+       become_method = sudo
+       become_user = ansible
+    loop:
+      - /home/{{ username }}/ansible/ansible.cfg
+      - /home/{{ username }}/.ansible.cfg
+      - /home/ansible/.ansible.cfg
+      - /etc/ansible/ansible.cfg
+
+  - name: Create the ansible.cfg file for root, with different parameters
+    copy:
+      dest: /root/.ansible.cfg
+      content: |
+       [defaults]
+       inventory = /home/{{ username }}/ansible/inventory
+       host_key_checking = False
+       timeout = 30
+
+  - name: Copy 'ansible' user id_rsa.pub to config_files
+    copy:
+      src: /home/ansible/.ssh/id_rsa.pub
+      dest: /home/{{ username }}/ansible/config_files/ansible_id_rsa.pub
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      mode: 0644
+
+  - name: Copy User id_rsa.pub to config_files
+    copy:
+      src: /home/{{ username }}/.ssh/id_rsa.pub
+      dest: /home/{{ username }}/ansible/config_files/{{ username }}_id_rsa.pub
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      mode: 0644
+
+  - name: Copy User id_rsa <PRIVATE KEY> to config_files
+    copy:
+      src: /home/{{ username }}/.ssh/id_rsa
+      dest: /home/{{ username }}/ansible/config_files/{{ username }}_id_rsa
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      mode: 0644

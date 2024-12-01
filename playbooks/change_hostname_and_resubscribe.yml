@@ -1,0 +1,2 @@
+# This has to be separate as each host will have an unique hostname
+- name: Configure Hostname for a Host

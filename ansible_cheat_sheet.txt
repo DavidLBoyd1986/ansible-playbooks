@@ -1,0 +1,20 @@
+
+ansible-doc -l
+    -Shows installed modules
+ansible-doc <module_name>
+    -Detailed information about a module
+
+ansible-galaxy collection install <namespace.collection>
+    - install a new collection, which contains modules
+    - EX: ansible-galaxy collection install ansible.posix
+
+Running Playbooks:
+
+ansible-playbook <playbook.yml> -u ansible --become --ask-become-pass
+ansible-playbook <playbook.yml> -u ansible
+
+
+Links:
+
+https://docs.ansible.com/ansible/latest/collections/index.html
+    - Lists all the namespace.collections
