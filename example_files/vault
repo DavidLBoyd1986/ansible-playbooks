@@ -1,0 +1,2 @@
+username_ssh_passphrase: inputpassphrasehere
+ansible_ssh_passphrase: inputpassphrasehere

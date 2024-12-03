@@ -1,0 +1,46 @@
+all:
+  children:
+    bastions:
+      children:
+        rhel_bastions:
+          hosts:
+            rhel-bastion.homelab.com:
+        ubuntu_bastions:
+          hosts:
+            ubuntu-bastion.homelab.com:
+
+    kubernetes:
+      children:
+        kubernetes_masters:
+          hosts:
+            kube-master.homelab.com:
+        kubernetes_nodes:
+          hosts:
+            kube-node-1.homelab.com:
+
+    test:
+      hosts:
+        ansible-test.homelab.com:
+
+    jenkins:
+      children:
+        jenkins_master:
+          hosts:
+            jenkins-master.homelab.com:
+
+    rhel_hosts:
+      children:
+        rhel_bastions:
+        jenkins:
+        test:
+
+    ubuntu_hosts:
+      children:
+        kubernetes:
+        ubuntu_bastions:
+
+    new:
+      hosts:
+        rhel-bastion.homelab.com:
+        ansible-test.homelab.com:
+        jenkins-master.homelab.com:

@@ -7,53 +7,112 @@ It uses:
 
 For the rest of the playbooks no explanation will be provided 
 
-NOTE:   This does NOT cover configuring the VM or Network for any VMs.
-        It assumes all of the VMs are created and connected to the network.
+NOTE:
 
-Configuring Ansible Controller:
+This does NOT cover configuring the VM or Network for any VMs.
+It assumes all of the VMs are created and connected to the network.
 
-1. Launch a VM.
-    - This example uses a RHEL 9 VM that is
-        * registered (to redhat)
-        * networked - It assumes the other VMs are already networked as well.
-    - Other than that, it assumes it is a fresh VM with only the 'root' user.
+IMPORTANT SECURITY NOTICE:
 
-2. Install ansible:
+The bootstrap playbooks add two users to the controller and hosts.
+    The <USER> passed as 'username' and a user called 'ansible'.
+The <USER> is given the ansible user's private key 'ansible_id_rsa'.
+<USER> logs into the hosts as 'ansible' to perform all the actions.
+User's can use ansible's private key, to run ansible, and not share an account.
+Sharing an account is worse than sharing a private key on one host, imo.
+But you can easily edit the playbooks to change this configuration.
+
+<USER> is added to all the hosts as well, so either account can run ansible.
+For <USER> just change ansible.cfg for remote_user = {{ username }}.
+
+Frankly, there is no 100% secure way to use the ansible CLI.
+You are either sharing accounts or sharing a private key.
+
+IMPORTANT NOTES:
+
+When I refer to User and the "username" variables used in bootstrap playbooks.
+It is a regular interactive user account that will be put on all the hosts.
+The 'ansible' project directory, and all these, playbooks should be
+under that User on the Ansible Controller. So, create that User manually.
+
+THE ABOVE WON'T WORK.
+
+THIS HAS TO START ENTIRELY IN THE ROOT DIRECTORY, AS THE dboyd USER IS 
+CREATED DURING BOOTSTRAPPING THE CONTROLLER.
+
+UPDATE THE PLAYBOOKS SO IT ALL RUNS UNDER ROOT TO START, AND THEN IS COPIED OVER TO dboyd USER.
+
+TODO ABOVE *****************************
+
+Running Playbooks as root user:
+
+The bootstrap playbooks, and these instructions, are designed to be ran as
+the root user. The 'ansible' project directory, and everything in it,
+will be created and ran under the root user. After initial configuration,
+the 'ansible' project will be transferred to the User created.
+
+Initial Set-up of Ansible Project, and configuring controller:
+
+The bootstrap_controller.yml playbook uses vault to store the passphrase for
+two SSH Keys it creates: ansible and User
+
+1. Install ansible:
 
     yum install ansible-core
 
-3. Copy the bootstrap_controller.yml file to the VM, and run the below command
+2. Create the 'ansible' directory under root account
+    
+    mkdir /root/ansible
 
-    ansible-playbook bootstrap_controller.yml -e "username=<USER>"
+3. Create an ansible vault in 
 
-    - Replace <USER> with name of the interactive account that will be added
-    - NOT the 'ansible' user, that will be configured separately
-    - This is, obviously, ran as the root user
+    ansible-vault create /root/ansible/vault
 
-4. Configure the password for <USER> and ansible, if desired
+4. Input a password for the vault
 
-    passwd <USER>
-    passwd ansible
+5. Put in two variables:
 
-6. The Controller is configured. Update the inventory file with managed VMs
+    ansible_ssh_passphrase: <passphrase for ansible ssh key>
+    username_ssh_passphrase: <passphrase for USER ssh key>
 
-    echo -e "[all]\n<IP>\n<IP>" > ~/ansible/inventory
-    EX: echo -e "[all]\n192.168.1.36\n192.168.1.37" > inventory
+6. Create a 'vars' directory under /root/ansible
 
-    - This is something that can be hand-jammed manually.
+    mkdir /root/ansible/vars
 
-TODO:
+7. Put "username" variable in a bootstrap_vars file:
 
-1. controller should be configured with ansible-vault
+    echo "username: <USER>" > /root/ansible/vars/bootstrap_vars
 
+8. Create Playbooks directory
 
-Configuring New Hosts:
+    mkdir /root/ansible/playbooks
 
-IMPORTANT:
+9. Add bootstrap_controller.yml and bootstrap_hosts.yml files under playbooks
 
-There are multiple ways to configure new hosts
+10. Create the inventory.yml file, add groups for 'all', 'new', and 'bastions'
 
-This example will use 'root', this requires root to ssh into the VM
+    NOTE - There many ways to configure an inventory file.
+         - I provided an example_file/inventory.yml
+         - The 3 groups: 'all', 'new', and 'bastions' are required
+         - as they are used in the playbooks.
+
+11. Verify the correct modules are installed
+
+    ansible-doc -l
+
+    NOTE - This is only necessary if 'ansible-core' was installed
+
+12. If ansible.posix is missing run
+
+     ansible-galaxy collection install ansible.posix
+
+13. Run the playbook 'bootstrap_controller.yml'
+
+    ansible-playbook bootstrap_controller.yml --ask-vault-pass
+
+14. Configuring hosts as root requires this setting in /etc/ssh/sshd_config
+
+    'PermitRootLogin yes'
 
     - Verify this 'PermitRootLogin' setting is configured on new hosts:
       
@@ -64,43 +123,38 @@ This example will use 'root', this requires root to ssh into the VM
         echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
         systemctl restart sshd
 
-    - The other option is to add a User to the Host that has sudo permissions
-        This is a sloppy method, when you can just turn on/off PermitRootLogin
+15. Run the bootstrap_hosts.yml playbook, provided in this repository
 
-1. Verify the correct modules are installed
+    ansible-playbook bootstrap_host.yml -i /root/ansible/inventory.yml --ask-pass --ask-vault-pass
 
-    ansible-doc -l
-
-    NOTE - This is only necessary if 'ansible-core' was installed, instead of the full 'ansible' package
-
-2. If ansible.posix is missing run
-
-     ansible-galaxy collection install ansible.posix
-
-3. Run the bootstrap_hosts.yml playbook, provided in this repository
-
-    ansible-playbook bootstrap_host.yml -i /home/<USER>/ansible/inventory --ask-pass -e "username=<USER>"
+    NOTE - This require the root password for all the hosts to be the same.
+           Since, it is used to SSH into the hosts as root.
+         - -i is required because root ansible.cfg point to USER inventory
+            So, if root is used in the future it's using an updated inventory
 
 TODO:
 
- 1. Add configure_hosts.yml. This will do all the actual configurations
- 2. Remove PermitRootLogin
- 3. Ran as ansible or <USER>
- 4. Do all the configurations that should be done on every host
+ * Add ansible vault configuration to ansible-controller
+
+ * Finish change_hostname_and_resubscribe.yml
+    Need to re-subscribe host if it is redhat os.
+
+ * Add configure_hosts.yml. This will do all the actual configurations
+ 
+ * Remove PermitRootLogin
+ 
+ * Do all the configurations that should be done on every host
      a. Firewall, copy /etc/hosts, etc..
- 5. Configure passwords for users 'ansible' and 'USER'
+ 
+ * Configure passwords for users 'ansible' and 'USER'
     Ansible - set an actual password since it shouldn't be used interactively
     USER - set a default password that should be changed.
 
- 6. test adding 'sudo usermod -s /usr/sbin/nologin ansible' to bootstrap_controller.yml
+ * test configuring controller from scratch
 
-    - name: Set shell for ansible user
-      ansible.builtin.user:
-        name: ansible
-        shell: /usr/sbin/nologin
 
- 7. See if you can:
-    a. run playbooks as USER with 'become: ansible'
-    b. run playboos as ansible.
 
- 8. test configuring controller from scratch
+ DONE:
+
+ 3. Ran as ansible or <USER>  - DONE
+    Both work out the gate, but <USER> uses ansible's private key

@@ -1,2 +1,22 @@
-# This has to be separate as each host will have an unique hostname
-- name: Configure Hostname for a Host
+---
+# Sets the hostname, and resubscribes to redhat, so it shows the new hostname.
+# IMPORTANT - Run this on a specific host using this flag:
+#               '-i <IP>' EX - '-i 192.168.1.100'
+#               '-i <HOSTNAME>' EX - '-i test-host.example.com'
+
+- name: Configure Hostname, and resubscribe host
+  hosts: no_hosts
+  tasks:
+    - name: Ensure that 'hostname' was provided as a variable
+      assert:
+        that:
+          - hostname is defined
+          - hostname != ""
+        fail_msg: "The 'hostname' variable must be defined and not empty."
+
+    - name: Configure hostname
+      hostname:
+        name: "{{ hostname }}"
+      when: ansible_os_family == "RedHat"
+
+    - name: unsubscribe from redhat

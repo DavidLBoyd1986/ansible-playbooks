@@ -1,46 +1,89 @@
 ---
 - name: Bootstrap a host by configuring ansible User
-  hosts: new
+  hosts: all 
+  vars_files:
+    - /root/ansible/vars/bootstrap_vars
+    - /root/ansible/vault
   become: true
   tasks:
+  - name: Ensure that 'username' was provided as a variable
+    assert:
+      that:
+        - username is defined
+        - username != ""
+      fail_msg: "The 'username' variable must be defined and not empty."
+
   - name: Create the ansible user
     user:
       name: ansible
       shell: /bin/bash
       state: present
 
-  - name: Add ansible to sudoers
+  - name: Create the USER
+    user:
+      name: "{{ username }}"
+      shell: /bin/bash
+      password: "{{ username_ssh_passphrase | password_hash('sha512') }}"
+      state: present
+
+  - name: Add ansible and USER to sudoers
     copy:
       dest: /etc/sudoers.d/sudo_users
-      content: "ansible ALL=(ALL) NOPASSWD: ALL\n"
+      content: "ansible ALL=(ALL) NOPASSWD: ALL\n{{ username }} ALL=(ALL) ALL\n"
       mode: '0440'
 
   - name: Configure SSH key from ansible on controller, as authorized on hosts
     authorized_key:
       user: ansible
-      key: "{{ lookup('file', '/home/{{ username }}/ansible/config_files/ansible_id_rsa.pub') }}"
+      key: "{{ lookup('file', '/root/ansible/config_files/ansible_id_rsa.pub') }}"
 
   - name: Configure SSH key from User on controller, as authorized on hosts
     authorized_key:
       user: "{{ username }}"
-      key: "{{ lookup('file', '/home/{{ username }}/ansible/config_files/{{ username }}_id_rsa.pub') }}"
+      key: "{{ lookup('file', '/root/ansible/config_files/{{ username }}_id_rsa.pub') }}"
 
 - name: Configure a bastion host by configuring User with private ssh key
-  hosts: rhel-bastion
+  hosts: bastions
+  vars_files:
+    - /root/ansible/vars/bootstrap_vars
   become: true
   tasks:
   - name: Copy private SSH key for User to be added on other Hosts
     copy:
-      src: /home/{{ username }}/ansible/config_files/{{ username }}_id_rsa
+      src: /root/ansible/config_files/{{ username }}_id_rsa
       dest: /home/{{ username }}/.ssh/id_rsa
+      mode: 0600
+      owner: "{{ username }}"
+      group: "{{ username }}"
+
+  - name: Copy public SSH key for User to be added on other Hosts
+    copy:
+      src: /root/ansible/config_files/{{ username }}_id_rsa.pub
+      dest: /home/{{ username }}/.ssh/id_rsa.pub
       mode: 0600
       owner: "{{ username }}"
       group: "{{ username }}"
 
 - name: delete the private SSH key for User from config_files
   hosts: localhost
+  vars_files:
+    - /root/ansible/vars/bootstrap_vars
   tasks:
   - name: Delete private SSH key for User from config_files
     file:
-      path: /home/{{ username }}/ansible/config_files/{{ username }}_id_rsa
+      path: /root/ansible/config_files/{{ username }}_id_rsa
       state: absent
+
+  - name: Copy the project directory to USER home directory
+    copy:
+      src: /root/ansible/
+      dest: /home/{{ username }}/ansible
+      owner: "{{ username }}"
+      group: "{{ username }}"
+  
+  - name: Copy the project directory to ansible home directory
+    copy:
+      src: /root/ansible/
+      dest: /home/ansible/ansible
+      owner: ansible
+      group: ansible
