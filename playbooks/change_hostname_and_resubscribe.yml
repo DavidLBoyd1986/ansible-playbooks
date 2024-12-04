@@ -1,12 +1,25 @@
----
-# Sets the hostname, and resubscribes to redhat, so it shows the new hostname.
-# IMPORTANT - Run this on a specific host using this flag:
-#               '-i <IP>' EX - '-i 192.168.1.100'
-#               '-i <HOSTNAME>' EX - '-i test-host.example.com'
+# IMPORTANT: This can only run on a single host using one of these CLI flags:
+#   '-i <IP>' EX - '-i 192.168.1.100,'
+#   '-i <HOSTNAME>' EX - '-i test-host.example.com,'
+
+# Requires the community.general collection is installed
+#  ansible-galaxy collection install community.general
+
+# Replace USER in vars_files path with USER you created, or another path.
 
 - name: Configure Hostname, and resubscribe host
-  hosts: no_hosts
+  hosts: all
+  vars_files:
+    - /home/USER/ansible/vault
   tasks:
+    - name: Ensure that this is only being ran on one host
+      assert:
+        that:
+          - ansible_play_hosts | length == 1
+        fail_msg: "This playbook can only run against one host.
+                   Please use '-i <ip>,' or '-i <hostname>,'
+                   when running this playbook."
+
     - name: Ensure that 'hostname' was provided as a variable
       assert:
         that:
@@ -14,9 +27,19 @@
           - hostname != ""
         fail_msg: "The 'hostname' variable must be defined and not empty."
 
+    - name: If running redhat, un-register the host.
+      redhat_subscription:
+        state: absent
+      when: ansible_facts['os_family'] == 'RedHat'
+
     - name: Configure hostname
       hostname:
         name: "{{ hostname }}"
-      when: ansible_os_family == "RedHat"
 
-    - name: unsubscribe from redhat
+    - name: If running redhat, re-register the host.
+      redhat_subscription:
+        state: present
+        username: "{{ redhat_username }}"
+        password: "{{ redhat_password }}"
+        auto_attach: true
+      when: ansible_facts['os_family'] == 'RedHat'

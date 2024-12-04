@@ -36,14 +36,29 @@ the 'same' playbook.
 
 ### Passwords and Passphrases:
 
-ssh key passphrases - The instructions and playbooks are configured to set
-passphrases for both users. They are configured as variables in an ansible vault.
+The instructions and playbooks are configured to set passphrases for both users.
+They are configured as variables in an ansible vault.
 There are instruction for how to pass in the ssh key passphrase
 when running ansible jobs using an ssh-agent.
 
 The ansible user is not configured with a password, it uses passwordless sudo.
 
 The **USER** is configured with a password that is the same as the ssh key passphrase.
+
+<h4>Saving ssh-key passphrase:</h4>
+
+To save the passphrase for an ssh-key, in this case,saving the passphrase
+for ansible user's private key while running as <b>USER</b>,
+run the below commands.
+
+    `eval "$(ssh-agent -s)"`
+
+    `ssh-add ~/.ssh/ansible_id_rsa`
+
+The first command starts the ssh-agent, and the second command adds the ssh key.
+You will be prompted for the passphrase after running the second command.
+This will allow you to run ansible-playbooks as <b>USER</b>, with ansible's
+SSH key, without being prompted for the ssh-key-passphrase.
 
 
 <h2>Running bootstrap playbooks as root:</h2>
@@ -114,15 +129,20 @@ I provided an example inventory file: example_files/inventory.yml.
 Only the 'all' and 'bastions' groups are required,
 as they are used in the playbooks.
 
-11. Verify the correct modules are installed
+11. Verify the correct collections are installed
 
     `ansible-doc -l`
 
-<b>NOTE</b> - This is only necessary if 'ansible-core' was installed
+<b>NOTE</b> - Installing collections is only necessary if 'ansible-core'
+was installed, instead of the entire ansible package.
 
 12. If ansible.posix is missing run:
 
     `ansible-galaxy collection install ansible.posix`
+
+13. Other important collections that are used in this repo's playbooks:
+
+    `ansible-galaxy collection install community.general`
 
 13. Run the playbook 'bootstrap_controller.yml':
 
@@ -136,19 +156,40 @@ as they are used in the playbooks.
 root's ansible.cfg points to <b>USER</b>'s inventory.
 This is so, if root is used in the future, it's using an updated inventory.
 
+<h4>Copying the ansible vault</h4>
+
+The vault file copied with the entire ansible project won't work.
+It needs deleted and recreated with the below commands.
+
+1. Delete the vault that was copied:
+
+    `rm /home/<b>USER</b>/ansible/vault`
+
+2. Decrypt the vault, and place the output in <b>USER</b> home directory:
+
+    `ansible-vault decrypt /root/ansible/vault --output /home/<b>USER</b>/ansible/vault_dc`
+
+3. Re-encrypt the vault:
+
+    `ansible-vault encrypt /home/<b>USER</b>/ansible/vault_dc --output /home/<b>USER</b>/ansible/vault`
+
+4. Change permissions:
+
+    `chown <b>USER</b>:<b>USER</b> /home/<b>USER</b>/ansible/vault`
+
 
 <h1>TODO:</h1>
 
- * Add in ssh-agent section for storing ansible user ssh key passphrase
-
- * Finish change_hostname_and_resubscribe.yml
+- Finish change_hostname_and_resubscribe.yml
     Need to re-subscribe host if it is redhat os.
 
- * Add configure_hosts.yml. This will do all the actual configurations
+- Add configure_hosts.yml. This will do all the actual configurations
  
- * Remove PermitRootLogin
+- vim.rc for every user has 'colorscheme industry'. Dark blue comments suck....
+
+- Remove PermitRootLogin, and turn off password auth for SSH
  
- * Do all the configurations that should be done on every host
+- Do all the configurations that should be done on every host
      a. Firewall, copy /etc/hosts, etc..
  
- * test configuring controller from scratch
+- test configuring controller from scratch
