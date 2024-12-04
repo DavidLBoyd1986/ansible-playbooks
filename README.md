@@ -30,7 +30,9 @@ Sharing an account is worse than sharing a private key amongst user's on the sam
 But you can easily edit the playbooks to change this configuration.
 
 Frankly, there is no 100% secure way to use the ansible CLI with multiple users.
-You are either sharing accounts or sharing a private key.
+You are either sharing accounts or sharing a private key. Or having multiple users
+with the 'same' playbooks in different locations, pushing from different files for
+the 'same' playbook.
 
 ### Passwords and Passphrases:
 
@@ -135,7 +137,9 @@ root's ansible.cfg points to <b>USER</b>'s inventory.
 This is so, if root is used in the future, it's using an updated inventory.
 
 
-<h1>TODO:<h1>
+<h1>TODO:</h1>
+
+ * Add in ssh-agent section for storing ansible user ssh key passphrase
 
  * Finish change_hostname_and_resubscribe.yml
     Need to re-subscribe host if it is redhat os.
