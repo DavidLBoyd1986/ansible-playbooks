@@ -1,5 +1,5 @@
 
-# Ansible Bootstrapping
+<h1>Ansible Bootstrapping</h1>
 
 This provides an explanation on initially configuring the controller and hosts.
 
@@ -8,12 +8,12 @@ The following playbooks are used:
 - bootstrap_hosts.yml
 - configure_hosts.yml
 
-### IMPORTANT NOTE:
+<h3>IMPORTANT NOTE:</h3>
 
 This does NOT cover creating the VM or Networking any VMs.
 It assumes all of the VMs are created and connected to the network.
 
-### IMPORTANT SECURITY NOTICE:
+<h3>IMPORTANT SECURITY NOTICE:</h3>
 
 The bootstrap playbooks adds two users to the controller and hosts.
 
@@ -34,7 +34,7 @@ You are either sharing accounts or sharing a private key. Or having multiple use
 with the 'same' playbooks in different locations, pushing from different files for
 the 'same' playbook.
 
-### Passwords and Passphrases:
+<h3>Passwords and Passphrases:</h3>
 
 The instructions and playbooks are configured to set passphrases for both users.
 They are configured as variables in an ansible vault.
@@ -44,6 +44,7 @@ when running ansible jobs using an ssh-agent.
 The ansible user is not configured with a password, it uses passwordless sudo.
 
 The **USER** is configured with a password that is the same as the ssh key passphrase.
+
 
 <h4>Saving ssh-key passphrase:</h4>
 
@@ -177,19 +178,30 @@ It needs deleted and recreated with the below commands.
 
     `chown <b>USER</b>:<b>USER</b> /home/<b>USER</b>/ansible/vault`
 
+<h1>Configuring Hosts<h1>
+
+For these steps you will run ansible as the configured <b>USER<b>, and not as root. The playbook will change 'PermitRootLogin' to 'no', so it will no longer work.
+
+1. Log in as <b>USER<b>.
+
+2. Install ansible.posix as <b>USER<b>:
+
+    `ansible-galaxy collection install ansible.posix`
+
+3. Run the playbook, as <b>USER<b>
+
+    `ansible-playbook configure_hosts.yml`
+
+<b>IMPORTANT<b> - If prompted for ssh passphrase, you just need to run the below commands:
+
+    `eval "$(ssh-agent -s)"`
+
+    `ssh-add ~/.ssh/ansible_id_rsa`
 
 <h1>TODO:</h1>
 
-- Finish change_hostname_and_resubscribe.yml
-    Need to re-subscribe host if it is redhat os.
+- Fix 'get_url' module not working on debian hosts
 
-- Add configure_hosts.yml. This will do all the actual configurations
- 
-- vim.rc for every user has 'colorscheme industry'. Dark blue comments suck....
+- Use ansible to install ansible-galaxy collections for <b>USER<b>
 
-- Remove PermitRootLogin, and turn off password auth for SSH
- 
-- Do all the configurations that should be done on every host
-     a. Firewall, copy /etc/hosts, etc..
- 
 - test configuring controller from scratch

@@ -5,12 +5,10 @@
 # Requires the community.general collection is installed
 #  ansible-galaxy collection install community.general
 
-# Replace USER in vars_files path with USER you created, or another path.
-
 - name: Configure Hostname, and resubscribe host
   hosts: all
   vars_files:
-    - /home/USER/ansible/vault
+    - ~/ansible/vault
   tasks:
     - name: Ensure that this is only being ran on one host
       assert:

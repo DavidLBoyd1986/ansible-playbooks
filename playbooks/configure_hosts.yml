@@ -1,26 +1,127 @@
-- name: Prepare RHEL host for Ansible management
-  hosts: all
-  become: yes
+---
+- name: Configure bastion hosts
+  hosts: bastions 
   tasks:
-    - name: Install required packages
-      yum:
+  - name: Add packages to RHEL bastion hosts
+    dnf:
+      name:
+        - tmux
+        - python3
+        - python3-pip
+        - nmap
+        - git
+        - unzip
+        - curl
+        - ca-certificates
+        - python3-requests
+      state: present
+    when: ansible_facts['os_family'] == 'RedHat'
+
+  - name: Add packages to Debian bastion hosts
+    apt:
+      name:
+        - tmux
+        - python3
+        - python3-pip
+        - nmap
+        - git
+        - unzip
+        - curl
+        - ca-certificates
+        - python3-requests
+      state: present
+    when: ansible_facts['os_family'] == 'Debian'
+
+# For RHEL where aws is installed is not in root's PATH, adding /usr/local/bin
+  - name: update root PATH to include /usr/bin/local
+    lineinfile:
+      path: /root/.bashrc
+      line: 'export PATH="/usr/local/bin:$PATH"'
+      insertafter: EOF
+      state: present
+
+# get_url is not working on my ubuntu hosts.
+# This is probably due to some dependency issue I'm still working on
+# So, I am only running this on rhel until I figure it out
+
+# Start - Install AWS CLI
+  - name: Download AWS CLI installer
+    get_url:
+      url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+      dest: "/tmp/awscliv2.zip"
+    when: ansible_facts['os_family'] == 'RedHat'
+
+  - name: Unzip the AWS CLI installer
+    unarchive:
+      src: "/tmp/awscliv2.zip"
+      dest: "/tmp"
+      remote_src: yes
+    when: ansible_facts['os_family'] == 'RedHat'
+
+  - name: Run the installer
+    command:
+      cmd: "/tmp/aws/install --update"
+    when: ansible_facts['os_family'] == 'RedHat'
+# End - Install AWS CLI
+
+  # Install: kubectl, aws-cli, helm, neovim.....
+
+- name: Configure all host, restarts sshd at the end
+  hosts: all
+  vars_files:
+    - ~/ansible/vars/bootstrap_vars
+  tasks:
+    - name: Install required packages on RHEL hosts
+      dnf:
         name:
-          - openssh-server
           - python3
+          - vim
+          - unzip
+          - curl
         state: present
+      when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Ensure SSH service is running
-      service:
-        name: sshd
-        state: started
-        enabled: yes
+    - name: Install required packages on Debian hosts
+      apt:
+        name:
+          - python3
+          - vim
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Allow SSH through the firewall
+    - name: Add vimrc for root, with colorscheme set
+      lineinfile:
+        path: /root/.vimrc
+        state: present
+        line: 'colorscheme industry'
+        create: true
+
+    - name: Add vimrc for USER, with colorscheme set
+      lineinfile:
+        path: /home/{{ username }}/.vimrc
+        state: present
+        line: 'colorscheme industry'
+        create: true
+
+    - name: Create/Update mandb
+      command: mandb -c
+
+    - name: Allow SSH through RHEL firewall
       firewalld:
         service: ssh
         permanent: true
         state: enabled
-      notify: Reload firewall
+      when: ansible_facts['os_family'] == 'RedHat'
+      notify: Restart RHEL firewall
+
+    - name: Allow SSH through Debian firewall
+      ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+        state: enabled
+      when: ansible_facts['os_family'] == 'Debian'
+      notify: Restart Debian firewall
 
     - name: Copy /etc/hosts file to host
       ansible.builtin.copy:
@@ -30,18 +131,33 @@
         group: root
         mode: '0644'
 
-    - name: Add dboyd user to host
-      user:
-        name: dboyd
-        groups: wheel
-        append: yes
-        generate_ssh_key: yes
-        ssh_key_bits: 2048
-        ssh_key_file: .ssh/id_rsa
+    - name: On RHEL change PermitRootLogin yes to no
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^PermitRootLogin yes'
+        line: 'PermitRootLogin no'
+      when: ansible_facts['os_family'] == 'RedHat'
+      notify: Restart sshd
 
-    - name: Add dboyd (on bastion host) public ssh key to host
-      authorized_key:
-        user: dboyd
+    - name: On Debian change PermitRootLogin yes to no
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^PermitRootLogin yes'
+        line: 'PermitRootLogin no'
+      when: ansible_facts['os_family'] == 'Debian'
+      notify: Restart ssh
+
   handlers:
-    - name: Reload firewall
+    - name: Restart RHEL firewall
       command: firewall-cmd --reload
+
+    - name: Restart Debian firewall
+      command: ufw reload
+
+    - name: Restart sshd
+      command: systemctl restart sshd
+
+    - name: Restart ssh
+      command: systemctl restart ssh
