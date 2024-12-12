@@ -178,7 +178,7 @@ It needs deleted and recreated with the below commands.
 
     `chown <b>USER</b>:<b>USER</b> /home/<b>USER</b>/ansible/vault`
 
-<h1>Configuring Hosts<h1>
+<h1>Configuring Hosts</h1>
 
 For these steps you will run ansible as the configured <b>USER<b>, and not as root. The playbook will change 'PermitRootLogin' to 'no', so it will no longer work.
 
