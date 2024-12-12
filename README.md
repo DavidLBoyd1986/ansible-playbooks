@@ -52,9 +52,8 @@ To save the passphrase for an ssh-key, in this case,saving the passphrase
 for ansible user's private key while running as <b>USER</b>,
 run the below commands.
 
-    `eval "$(ssh-agent -s)"`
-
-    `ssh-add ~/.ssh/ansible_id_rsa`
+    eval "$(ssh-agent -s)"
+    ssh-add ~/.ssh/ansible_id_rsa
 
 The first command starts the ssh-agent, and the second command adds the ssh key.
 You will be prompted for the passphrase after running the second command.
