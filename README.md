@@ -194,9 +194,9 @@ For these steps you will run ansible as the configured <b>USER<b>, and not as ro
 
 <b>IMPORTANT<b> - If prompted for ssh passphrase, you just need to run the below commands:
 
-    `eval "$(ssh-agent -s)"`
-
-    `ssh-add ~/.ssh/ansible_id_rsa`
+    ```markdown
+        eval "$(ssh-agent -s)"
+        ssh-add ~/.ssh/ansible_id_rsa
 
 <h1>TODO:</h1>
 
