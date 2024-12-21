@@ -11,10 +11,16 @@
 
   - name: Install Jenkins Repository
     yum_repository:
-      name: jenkins
+      name: Jenkins-stable
       description: Jenkins Repository
-      baseurl: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+      baseurl: http://pkg.jenkins.io/redhat-stable/
+      gpgcheck: true
       gpgkey: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+  - name: Add Jenkins gpg key to rpm database
+    rpm_key:
+      key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+      state: present
 
   - name: Install Jenkins
     yum:
