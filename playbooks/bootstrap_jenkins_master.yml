@@ -39,16 +39,10 @@
   - name: Open port 8080 in firewall
     firewalld:
       zone: public
-      service: http
       port: 8080/tcp
       state: enabled
       permanent: true
       immediate: true
-
-  - name: Check that jenkins page is reachable
-    uri:
-      url: http://localhost:8080
-      status_code: 200
 
   # Add in adding a cert using let's encrypt
 
