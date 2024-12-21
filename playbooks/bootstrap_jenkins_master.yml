@@ -1,0 +1,31 @@
+---
+- name: Bootstrap a server to be a Jenkins Master Server
+- hosts: jenkins_master
+  tasks:
+  - name: Install Java and other packages
+    yum:
+      name:
+        - java-17-openjdk
+        - fontconfig
+      state: present
+
+  - name: Install Jenkins Repository
+    yum_repository:
+      name: jenkins
+      description: Jenkins Repository
+      baseurl: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+      gpgkey: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+  - name: Install Jenkins
+    yum:
+      name: jenkins
+      state: present
+
+  - name: Reload daemons
+    command: systemctl daemon-reload
+
+  - name: Start Jenkins
+    service:
+      name: jenkins
+      state: started
+      enabled: yes

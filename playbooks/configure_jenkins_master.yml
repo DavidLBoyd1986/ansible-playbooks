@@ -1,0 +1,53 @@
+---
+- name: Configure the Jenkins Master Server
+- hosts: jenkins_master
+  vars_files:
+    - ~/ansible/vars/bootstrap_vars
+    - ~/ansible/vault
+  tasks:
+  - name: Configure Jenkins
+    copy:
+      src: /root/ansible/config_files/jenkins_master_config.xml
+      dest: /var/lib/jenkins/config.xml
+      owner: jenkins
+      group: jenkins
+      mode: 0644
+    notify: Restart Jenkins
+
+  - name: Configure Jenkins Plugins
+    copy:
+      src: /root/ansible/config_files/jenkins_plugins.txt
+      dest: /tmp/jenkins_plugins.txt
+      owner: jenkins
+      group: jenkins
+      mode: 0644
+    notify: Restart Jenkins
+
+  - name: Install Jenkins Plugins
+    command: "xargs /usr/bin/jenkins-plugin-cli -f < /tmp/jenkins_plugins.txt"
+    args:
+      creates: /var/lib/jenkins/jenkins-cli.jar
+    notify: Restart Jenkins
+
+  - name: Configure Jenkins Security
+    copy:
+      src: /root/ansible/config_files/jenkins_security.groovy
+      dest: /var/lib/jenkins/init.groovy.d/security.groovy
+      owner: jenkins
+      group: jenkins
+      mode: 0644
+    notify: Restart Jenkins
+
+  - name: Configure Jenkins Jobs
+    copy:
+      src: /root/ansible/config_files/jenkins_jobs.xml
+      dest: /var/lib/jenkins/jobs/jenkins_jobs/config.xml
+      owner: jenkins
+      group: jenkins
+      mode: 0644
+    notify: Restart Jenkins
+
+  - name: Restart Jenkins
+    service:
+      name: jenkins
+      state: restarted
