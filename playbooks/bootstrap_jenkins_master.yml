@@ -44,6 +44,14 @@
       permanent: true
       immediate: true
 
+  - name: Get Jenkins initial admin password
+    command: cat /var/lib/jenkins/secrets/initialAdminPassword
+    register: jenkins_password
+
+  - name: Print Jenkins initial admin password
+    debug:
+      msg: "Jenkins initial admin password is {{ jenkins_password.stdout }}"
+
   # Add in adding a cert using let's encrypt
 
   # configure DNS for Jenkins
