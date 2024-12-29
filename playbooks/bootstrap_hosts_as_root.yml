@@ -1,4 +1,6 @@
 ---
+# This playbook is meant to be ran as root during the initial configuration
+
 - name: Bootstrap a host by configuring ansible User
   hosts: all 
   vars_files:

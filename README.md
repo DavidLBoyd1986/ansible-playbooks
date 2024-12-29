@@ -196,12 +196,23 @@ For these steps you will run ansible as the configured <b>USER<b>, and not as ro
         eval "$(ssh-agent -s)"
         ssh-add ~/.ssh/ansible_id_rsa
 
+<b>Example Commands for running playbooks as USER</b>
+
+Running 'change_hostname_and_resubscribe.yml':
+
+    ```
+    ansible-playbook -i 192.168.0.123, change_hostname_and_resubscribe.yml --ask-vault-pass -e 'hostname=new-hostname.example.com'
+    ```
+
+Running 'bootstrap_hosts.yml':
+
+    ```
+    ansible-playbook bootstrap_hosts.yml --ask-pass --ask-vault-pass
+    ```
+
 <h1>TODO:</h1>
 
-- When transferring playbooks to USER from root, update or have separate 'bootstrap_hosts.yml' that can run as USER
-    - Right now it is written to be ran as root.
-    - This is important update. I just added a new host and discovered the playbook is still designed to run as root.
-    - Will create a separate playbook, that seems like the easiest solution.
+- Add explanation for using vault password in a file so no password needs entered dynamically
 
 - Fix 'get_url' module not working on debian hosts
 

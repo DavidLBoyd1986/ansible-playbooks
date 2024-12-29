@@ -2,11 +2,13 @@
 #   '-i <IP>' EX - '-i 192.168.1.100,'
 #   '-i <HOSTNAME>' EX - '-i test-host.example.com,'
 
+# REMEMBER THE , after the IP or Hostname!!!!!!!!!
+
 # Requires the community.general collection is installed
 #  ansible-galaxy collection install community.general
 
 - name: Configure Hostname, and resubscribe host
-  hosts: all
+  hosts: all 
   vars_files:
     - ~/ansible/vault
   tasks:

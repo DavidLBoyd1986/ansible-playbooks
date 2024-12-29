@@ -1,0 +1,77 @@
+---
+- name: Initial setup of a Jenkins Worker Node
+  hosts: jenkins_worker
+  tasks:
+  - name: Install required software, an ever growing list
+    dnf:
+      name:
+        - java-17-openjdk
+        - git
+        - maven
+        - nodejs
+        - python3
+        - python3-pip
+        - curl
+      state: present
+
+  - name: Configure 'jenkins' User on worker 
+    user:
+      name: jenkins 
+      shell: /bin/bash
+      state: present
+
+  - name: Configure directory for the jenkins agent
+    file:
+      path: /home/jenkins/agent
+      state: directory
+      owner: jenkins
+      group: jenkins
+      mode: 0755
+
+# Start - Install AWS CLI
+  - name: Download AWS CLI installer
+    get_url:
+      url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+      dest: "/tmp/awscliv2.zip"
+    when: ansible_facts['os_family'] == 'RedHat'
+
+  - name: Unzip the AWS CLI installer
+    unarchive:
+      src: "/tmp/awscliv2.zip"
+      dest: "/tmp"
+      remote_src: yes
+    when: ansible_facts['os_family'] == 'RedHat'
+
+  - name: Run the installer
+    command:
+      cmd: "/tmp/aws/install --update"
+    when: ansible_facts['os_family'] == 'RedHat'
+
+  # Install: kubectl, aws-cli, helm,
+
+- name: Configure a Jenkins Master with SSH, so it can connect to Worker Node
+  hosts: jenkins_master
+  tasks:
+  - name: Configure 'jenkins' User on Master, has to SSH without a password
+    user:
+      name: jenkins 
+      shell: /bin/bash
+      state: present
+      generate_ssh_key: yes
+      ssh_key_bits: 2048
+      ssh_key_file: .ssh/id_rsa
+
+  - name: Configure SSH key for jenkins user, as authorized on jenkins_worker
+    authorized_key:
+      user: jenkins
+      key: "{{ lookup('file', '/home/jenkins/.ssh/id_rsa.pub') }}"
+      state: present
+    delegate_to: jenkins_worker
+
+- name: Configure a Jenkins Worker Node
+  hosts: jenkins_worker
+  tasks:
+  - name: Download the agent.jar file from the Jenkins Master
+    get_url:
+      url: "http://{{ hostvars['jenkins']['jenkins_master'] }}:8080/jnlpJars/agent.jar"
+      dest: "/home/jenkins/agent.jar"
