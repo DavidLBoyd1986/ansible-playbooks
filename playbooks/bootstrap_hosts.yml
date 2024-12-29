@@ -1,6 +1,11 @@
 ---
+
+# This obviously needs ran as root.
+# So, run with --ask-pass and enter the root password for the machine!!!!
+
 - name: Bootstrap a host by configuring ansible User
-  hosts: all 
+  hosts: all
+  remote_user: root
   vars_files:
     - ~/ansible/vars/bootstrap_vars
     - ~/ansible/vault
@@ -44,6 +49,7 @@
 
 - name: Configure a bastion host by configuring User with private ssh key
   hosts: bastions
+  remote_user: root
   vars_files:
     - ~/ansible/vars/bootstrap_vars
   become: true

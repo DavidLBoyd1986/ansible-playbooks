@@ -1,4 +1,6 @@
 ---
+# This playbook is meant to be ran as root during the initial configuration
+
 - name: Bootstraps the controller with required configurations
   hosts: localhost
   vars_files:
