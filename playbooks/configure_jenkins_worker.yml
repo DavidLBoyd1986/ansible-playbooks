@@ -47,12 +47,21 @@
       cmd: "/tmp/aws/install --update"
     when: ansible_facts['os_family'] == 'RedHat'
 
-  # Install: kubectl, aws-cli, helm,
+  - name: Update PATH environment variable to include /usr/local/bin
+    lineinfile:
+      path: /home/jenkins/.bash_profile
+      regexp: '^export PATH='
+      line: 'export PATH=$PATH:/usr/local/bin'
+      state: present
+      create: yes
+      backup: yes
+
+  # Install: kubectl, helm,
 
 - name: Configure a Jenkins Master with SSH, so it can connect to Worker Node
   hosts: jenkins_master
   tasks:
-  - name: Configure 'jenkins' User on Master, has to SSH without a password
+  - name: Configure 'jenkins' User on Master, has to SSH without a password # This wasn't 
     user:
       name: jenkins 
       shell: /bin/bash
