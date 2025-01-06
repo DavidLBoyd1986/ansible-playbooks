@@ -52,6 +52,15 @@
     debug:
       msg: "Jenkins initial admin password is {{ jenkins_password.stdout }}"
 
-  # Add in adding a cert using let's encrypt
+# This gets the Jenkins Master setup
 
-  # configure DNS for Jenkins
+# Will add more later to get the Jenkins Master configured with xml files
+
+# Add in adding a cert using let's encrypt
+  # Adding a cert for a private server is stupid and not something that is done outside organizations
+  # Might add a self signed cert, and set up trusting it someway, but that's outside the scope of this playbook
+
+# configure DNS for Jenkins
+  # I manually configured it on pfsense
+  # Might set up a playbook for configuring DNS Entries in pfsense
+

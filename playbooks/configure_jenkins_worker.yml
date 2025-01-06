@@ -1,3 +1,5 @@
+# Not finished!!! I still need to link the Node to the Master.
+# Will circle back after I get Jenkins pipelines running.
 ---
 - name: Initial setup of a Jenkins Worker Node
   hosts: jenkins_worker

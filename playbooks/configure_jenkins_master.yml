@@ -1,3 +1,6 @@
+# THIS DOES NOT WORK
+# IT WILL BE THE NEXT STEP FOR CONFIGURING JENKINS MASTER WITH XML FILES
+
 ---
 - name: Configure the Jenkins Master Server
 - hosts: jenkins_master
