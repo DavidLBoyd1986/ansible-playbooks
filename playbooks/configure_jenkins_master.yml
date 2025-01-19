@@ -1,6 +1,25 @@
 # THIS DOES NOT WORK
 # IT WILL BE THE NEXT STEP FOR CONFIGURING JENKINS MASTER WITH XML FILES
 
+# Configuring Jenkins Nodes:
+# Need to Configure Jenkins Controller with 'jenkins' user,
+# and create an SSH Key for that user.
+# Then copy that SSH Key to all the hosts.
+
+# To add the Node to the Jenkins controller, manually I added things in the GUI.
+# The only things required on the Node is:
+  # 1. Add 'jenkins' user
+  # 2. Copy public key for the ssh key created on jenkins controller.
+  #   a. Might require updating sshd_config, will test it
+  # 3. Add the Node as a 'known host' to jenkins controller
+  # 4. All of the above should be all that's needed on the Node to create it as an agent
+  #     The jenkins agent is downloaded to the node when configured via Jenkins Controller.
+  # 5. Last step, add all the necessary software to be used.
+
+# After doing the steps above, you can configure the jenkins-controller to add the new Node:
+#   Research doing this via APIs or an existing jenkins playbook.
+#   If the existing Jenkins playbooks don't have it, I CAN ADD THE FEATURE!!!!!!!
+
 ---
 - name: Configure the Jenkins Master Server
 - hosts: jenkins_master

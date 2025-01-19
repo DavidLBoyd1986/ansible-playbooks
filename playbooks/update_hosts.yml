@@ -2,14 +2,24 @@
 - name: Update all hosts
   hosts: all
   tasks:
+
+  # Add in a step to take snapshots (when I fix the feature in proxmox)
+
   - name: Update RHEL hosts
-    dnf:
+    ansible.builtin.dnf:
       name: "*"
       state: present
     when: ansible_facts['os_family'] == 'RedHat'
 
   - name: Add packages to Debian bastion hosts
-    apt:
+    ansible.builtin.apt:
       name: "*"
       state: present
     when: ansible_facts['os_family'] == 'Debian'
+
+  - name: Reboot the hosts
+    ansible.builtin.reboot:
+
+  # Add tests for each host to test if they came back up properly
+
+  # Add tests for specific hosts to test their basic functions are working.

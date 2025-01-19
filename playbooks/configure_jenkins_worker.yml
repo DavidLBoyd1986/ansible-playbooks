@@ -70,7 +70,7 @@
       state: present
       generate_ssh_key: yes
       ssh_key_bits: 2048
-      ssh_key_file: .ssh/id_rsa
+      ssh_key_file: .ssh/jenkins_agent_key
 
   - name: Configure SSH key for jenkins user, as authorized on jenkins_worker
     authorized_key:
@@ -78,6 +78,8 @@
       key: "{{ lookup('file', '/home/jenkins/.ssh/id_rsa.pub') }}"
       state: present
     delegate_to: jenkins_worker
+
+  # Use Jenkins API or Playbook to add the created ssh key as a credential
 
 - name: Configure a Jenkins Worker Node
   hosts: jenkins_worker
