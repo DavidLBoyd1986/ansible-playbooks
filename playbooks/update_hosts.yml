@@ -8,13 +8,13 @@
   - name: Update RHEL hosts
     ansible.builtin.dnf:
       name: "*"
-      state: present
+      state: latest
     when: ansible_facts['os_family'] == 'RedHat'
 
   - name: Add packages to Debian bastion hosts
     ansible.builtin.apt:
       name: "*"
-      state: present
+      state: latest
     when: ansible_facts['os_family'] == 'Debian'
 
   - name: Reboot the hosts
