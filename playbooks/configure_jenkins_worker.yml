@@ -8,7 +8,10 @@
     ansible.builtin.yum_repository:
       name: Hashicorp
       description: Hashicorp Package Repository
-      baseurl: https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+      baseurl: https://rpm.releases.hashicorp.com/RHEL/$releasever/$basearch/stable
+      enabled: yes
+      gpgcheck: yes
+      gpgkey: https://rpm.releases.hashicorp.com/gpg
 
   - name: Install required software, an ever growing list
     dnf:
@@ -78,31 +81,35 @@
     
   # Install: helm
 
-- name: Configure a Jenkins Master with SSH, so it can connect to Worker Node
-  hosts: jenkins_master
-  tasks:
-  - name: Configure 'jenkins' User on Master, has to SSH without a password # This wasn't 
-    user:
-      name: jenkins 
-      shell: /bin/bash
-      state: present
-      generate_ssh_key: yes
-      ssh_key_bits: 2048
-      ssh_key_file: .ssh/jenkins_agent_key
+  # Below was an attempt to connect Jenkins Worker to Master Node.
+  # There doesn't appear to be a jenkins module to do this, but the way below
+  # is NOT the way to do it.
 
-  - name: Configure SSH key for jenkins user, as authorized on jenkins_worker
-    authorized_key:
-      user: jenkins
-      key: "{{ lookup('file', '/home/jenkins/.ssh/id_rsa.pub') }}"
-      state: present
-    delegate_to: jenkins_worker
+# - name: Configure a Jenkins Master with SSH, so it can connect to Worker Node
+#   hosts: jenkins_master
+#   tasks:
+#   - name: Configure 'jenkins' User on Master, has to SSH without a password # This wasn't 
+#     user:
+#       name: jenkins 
+#       shell: /bin/bash
+#       state: present
+#       generate_ssh_key: yes
+#       ssh_key_bits: 2048
+#       ssh_key_file: .ssh/jenkins_agent_key
 
-  # Use Jenkins API or Playbook to add the created ssh key as a credential
+#   - name: Configure SSH key for jenkins user, as authorized on jenkins_worker
+#     authorized_key:
+#       user: jenkins
+#       key: "{{ lookup('file', '/home/jenkins/.ssh/id_rsa.pub') }}"
+#       state: present
+#     delegate_to: jenkins_worker
 
-- name: Configure a Jenkins Worker Node
-  hosts: jenkins_worker
-  tasks:
-  - name: Download the agent.jar file from the Jenkins Master
-    get_url:
-      url: "http://{{ hostvars['jenkins']['jenkins_master'] }}:8080/jnlpJars/agent.jar"
-      dest: "/home/jenkins/agent.jar"
+#   # Use Jenkins API or Playbook to add the created ssh key as a credential
+
+# - name: Configure a Jenkins Worker Node
+#   hosts: jenkins_worker
+#   tasks:
+#   - name: Download the agent.jar file from the Jenkins Master
+#     get_url:
+#       url: "http://{{ hostvars['jenkins']['jenkins_master'] }}:8080/jnlpJars/agent.jar"
+#       dest: "/home/jenkins/agent.jar"
