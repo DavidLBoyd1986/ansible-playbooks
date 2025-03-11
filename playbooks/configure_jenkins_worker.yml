@@ -4,6 +4,12 @@
 - name: Initial setup of a Jenkins Worker Node
   hosts: jenkins_worker
   tasks:
+  - name: Configure Hashicorp Repository
+    ansible.builtin.yum_repository:
+      name: Hashicorp
+      description: Hashicorp Package Repository
+      baseurl: https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+
   - name: Install required software, an ever growing list
     dnf:
       name:
@@ -14,6 +20,8 @@
         - python3
         - python3-pip
         - curl
+        - yum-utils
+        - terraform
       state: present
 
   - name: Configure 'jenkins' User on worker 
@@ -58,7 +66,17 @@
       create: yes
       backup: yes
 
-  # Install: kubectl, helm,
+  # Start - Install kubectl
+  - name: Download kubectl CLI tool
+    get_url:
+      url: "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
+      dest: "/usr/local/bin/kubectl"
+      mode: '0777'
+    when: ansible_facts['os_family'] == 'RedHat'
+
+  # Verify kubectl was installed using version
+    
+  # Install: helm
 
 - name: Configure a Jenkins Master with SSH, so it can connect to Worker Node
   hosts: jenkins_master
