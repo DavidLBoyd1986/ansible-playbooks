@@ -10,13 +10,13 @@ There are two playbooks for the initial set-up of ansible, and they both end in 
 
  The "bootstrap_controller_initial_setup.yml" configures the ansible-controller, and the "bootstrap_hosts_initial_setup.yml" configures the hosts. 
  
-The only difference between these "bootstrap_hosts_initial_setup.yml" and "bootstrap_hosts.yml" is the "initial_setup" playbook is pointing to files in /root and "bootstrap_hosts.yml" is pointing to files in the USER's directory. The "bootstrap_hosts.yml" playbook is meant to be ran to configure new hosts created after the initial configurition of ansible; there is an explanation at the end of this README that explains how to bootstrap/configure new hosts, after the initial setup. I might try to reconcile these two playbooks in the future.
+The only difference between these "bootstrap_hosts_initial_setup.yml" and "bootstrap_hosts.yml" is the "initial_setup" playbook is pointing to files in /root and "bootstrap_hosts.yml" is pointing to files in the USER's directory. The "bootstrap_hosts.yml" playbook is meant to be ran to configure new hosts created after the initial configuration of ansible; there is an explanation at the end of this README that explains how to bootstrap/configure new hosts, after the initial setup is complete. I might try to reconcile these two playbooks in the future.
 
 The playbooks below can be used anytime after the initial set-up of ansible to configure new hosts:
 - bootstrap_hosts.yml
     - Sets up host to allow ansible to be used on it: add ansible user, add ssh keys, etc...
 - configure_hosts.yml
-    - Performs basic configurations: Install software, adds configurations, etc...
+    - Performs basic configurations: install software, adds configurations, etc...
 - update_hosts.yml
     - Runs update commands on all hosts. Doesn't do any backup or testing, might add that in the future
 - change_hostname_and_resubscribe.yml
@@ -24,14 +24,14 @@ The playbooks below can be used anytime after the initial set-up of ansible to c
 
 <h3>IMPORTANT NOTE:</h3>
 
-This does NOT cover creating the VM or Networking any VMs.
+This obviously does NOT cover creating the VM or Networking any VMs.
 It assumes all of the VMs are created and connected to the network.
 
 <h3>IMPORTANT SECURITY NOTICE:</h3>
 
 The bootstrap playbooks adds two users to the controller and hosts.
 
-- <b>USER<b> - The <b>USER</b> passed as 'username' - the interactive user account.
+- <b>USER</b> - The <b>USER</b> passed as 'username' - the interactive user account.
 - ansible - A user called 'ansible' - the account used to run ansible jobs on hosts.
 
 <mark>The **USER** is given the ansible user's private key 'ansible_id_rsa'.</mark>
