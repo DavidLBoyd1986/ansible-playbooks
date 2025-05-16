@@ -1,7 +1,0 @@
----
-- name: A playbook that is used to show examples of stuff I always forget
-  hosts: test
-  tasks:
-    - name: Show ansible facts, TODO - Find a location that lists these facts
-      debug:
-        msg: "OS: {{ ansible_distribution }} {{ ansible_distribution_version }} ({{ ansible_os_family }})"

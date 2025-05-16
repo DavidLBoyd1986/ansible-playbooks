@@ -1,12 +1,26 @@
 
 <h1>Ansible Bootstrapping</h1>
 
-This provides an explanation on initially configuring the controller and hosts.
+This repository provides ansible playbooks for initially bootstrapping/configuring the ansible-controller and all existing hosts.
 
-The following playbooks are used:
-- bootstrap_controller.yml
+There are two playbooks for the initial set-up of ansible, and they both end in "_initial_setup".
+
+ - bootstrap_controller_initial_setup.yml
+ - bootstrap_hosts_initial_setup.yml
+
+ The "bootstrap_controller_initial_setup.yml" configures the ansible-controller, and the "bootstrap_hosts_initial_setup.yml" configures the hosts. 
+ 
+The only difference between these "bootstrap_hosts_initial_setup.yml" and "bootstrap_hosts.yml" is the "initial_setup" playbook is pointing to files in /root and "bootstrap_hosts.yml" is pointing to files in the USER's directory. The "bootstrap_hosts.yml" playbook is meant to be ran to configure new hosts created after the initial configurition of ansible; there is an explanation at the end of this README that explains how to bootstrap/configure new hosts, after the initial setup. I might try to reconcile these two playbooks in the future.
+
+The playbooks below can be used anytime after the initial set-up of ansible to configure new hosts:
 - bootstrap_hosts.yml
+    - Sets up host to allow ansible to be used on it: add ansible user, add ssh keys, etc...
 - configure_hosts.yml
+    - Performs basic configurations: Install software, adds configurations, etc...
+- update_hosts.yml
+    - Runs update commands on all hosts. Doesn't do any backup or testing, might add that in the future
+- change_hostname_and_resubscribe.yml
+    - This playbook is for redhat hosts. It changes the hostname and resubscribes the host to redhat.
 
 <h3>IMPORTANT NOTE:</h3>
 
@@ -18,7 +32,7 @@ It assumes all of the VMs are created and connected to the network.
 The bootstrap playbooks adds two users to the controller and hosts.
 
 - <b>USER<b> - The <b>USER</b> passed as 'username' - the interactive user account.
-- ansible    - A user called 'ansible' - the account used to run ansible jobs on hosts.
+- ansible - A user called 'ansible' - the account used to run ansible jobs on hosts.
 
 <mark>The **USER** is given the ansible user's private key 'ansible_id_rsa'.</mark>
 
@@ -86,7 +100,8 @@ Only one password can be supplied when running the playbook using --ask-pass,
 and it is used to SSH into all the hosts.
 
 
-<h1>Initial Set-up of Ansible Project, and configuring controller:</h1>
+<h1>Initial Set-up of Ansible Project</h1>
+<h2>Configuring controller</h2>
 
 1. Install ansible:
 
@@ -177,7 +192,7 @@ It needs deleted and recreated with the below commands.
 
     `chown <b>USER</b>:<b>USER</b> /home/<b>USER</b>/ansible/vault`
 
-<h1>Configuring Hosts</h1>
+</h2>Configuring Hosts</h2>
 
 For these steps you will run ansible as the configured <b>USER<b>, and not as root. The playbook will change 'PermitRootLogin' to 'no', so it will no longer work.
 
@@ -210,33 +225,35 @@ Running 'bootstrap_hosts.yml':
     ansible-playbook bootstrap_hosts.yml --ask-pass --ask-vault-pass
     ```
 
-<h1>After Bootstrapping</h1>
+<h1>After Initial Bootstrapping of Controller</h1>
 
-After everything is set up, this is how you will add/configure new servers.
+After everything is set up, below is the method for how you will add/configure new servers.
 
-<h2>Steps for a new server</h2>
+No matter what, a new server must be configured by running the "bootstrap_hosts.yml" playbook as root. This must be ran as root because a new server doesn't have the ansible user configured yet. The "bootstrap_hosts.yml" playbook will set all that up.
 
-No matter what, new server must be configured by running the "bootstrap_hosts.yml" playbook as root. This is because they don't have the ansible user set up yet, but this playbook will set all that up.
+<h2>Bootstrapping a new server</h2>
 
-<h3>Bootstrapping a new server</h3>
+1. Server must allow root to ssh. Add below to /etc/ssh/sshd_config
 
-1. Server must allow root to ssh
-
-    PermitRootLogin yes
+    `PermitRootLogin yes`
 
 2. Set server root password
-3. Add server to ansible-controller /etc/hosts
-4. Add server to ansible-controller inventory
-5. Test ssh as root to server
-    a. This allows you to not only test but trust the server's host key
+
+3. Add server to ansible-controller "/etc/hosts"
+
+4. Add server to ansible-controller ansible inventory file
+
+5. Test ssh as root to the new server
+
+    - This allows you to not only test but trust the server's host key
 
 6. As root, run "bootstrap_hosts.yml" playbook with command shown below:
 
-    ansible-playbook bootstrap_hosts.yml --ask-pass --ask-vault-pass
+    `ansible-playbook bootstrap_hosts.yml --ask-pass --ask-vault-pass`
 
 7. Now this server can be configured by "ansible" user like all other servers
 
-<h3>Configuring a new server</h3>
+<h2>Configuring a new server</h2>
 
 1. Go back to being the normal user (exit root)
 2. Run these two commands to save the ansible ssh key in the ssh-agent
@@ -247,18 +264,8 @@ No matter what, new server must be configured by running the "bootstrap_hosts.ym
 3. Must enter the passphrase for "ansible_id_rsa" after running the 2nd command.
 4. Run "configure_hosts.yml" playbook as shown below
 
-    ansible-playbook configure_hosts.yml
+    `ansible-playbook configure_hosts.yml`
 
 5. The server is now configured.
 
 Now run any other playbook/roles to configure the server with applications.
-
-<h1>TODO:</h1>
-
-- Add explanation for using vault password in a file so no password needs entered dynamically
-
-- Fix 'get_url' module not working on debian hosts
-
-- Use ansible to install ansible-galaxy collections for <b>USER<b>
-
-- test configuring controller from scratch
