@@ -17,8 +17,8 @@ It assumes all of the VMs are created and connected to the network.
 
 The bootstrap playbooks adds two users to the controller and hosts.
 
-- The <b>USER</b> passed as 'username' - the interactive user account.
-- A user called 'ansible' - the account used to run ansible jobs on hosts.
+- <b>USER<b> - The <b>USER</b> passed as 'username' - the interactive user account.
+- ansible    - A user called 'ansible' - the account used to run ansible jobs on hosts.
 
 <mark>The **USER** is given the ansible user's private key 'ansible_id_rsa'.</mark>
 
@@ -26,7 +26,7 @@ I did this so it is not necessary to log in as 'ansible' to work with ansible.
 The <b>USER</b> logs into the hosts as 'ansible' (remote_user) to perform all the actions.
 
 So, the <b>USER</b> can use ansible's private key, to run ansible, and not share an account.
-Sharing an account is worse than sharing a private key amongst user's on the same host, in my opinion.
+Sharing an account is worse than sharing a private key amongst users on the same host, in my opinion.
 But you can easily edit the playbooks to change this configuration.
 
 Frankly, there is no 100% secure way to use the ansible CLI with multiple users.
@@ -209,6 +209,49 @@ Running 'bootstrap_hosts.yml':
     ```
     ansible-playbook bootstrap_hosts.yml --ask-pass --ask-vault-pass
     ```
+
+<h1>After Bootstrapping</h1>
+
+After everything is set up, this is how you will add/configure new servers.
+
+<h2>Steps for a new server</h2>
+
+No matter what, new server must be configured by running the "bootstrap_hosts.yml" playbook as root. This is because they don't have the ansible user set up yet, but this playbook will set all that up.
+
+<h3>Bootstrapping a new server</h3>
+
+1. Server must allow root to ssh
+
+    PermitRootLogin yes
+
+2. Set server root password
+3. Add server to ansible-controller /etc/hosts
+4. Add server to ansible-controller inventory
+5. Test ssh as root to server
+    a. This allows you to not only test but trust the server's host key
+
+6. As root, run "bootstrap_hosts.yml" playbook with command shown below:
+
+    ansible-playbook bootstrap_hosts.yml --ask-pass --ask-vault-pass
+
+7. Now this server can be configured by "ansible" user like all other servers
+
+<h3>Configuring a new server</h3>
+
+1. Go back to being the normal user (exit root)
+2. Run these two commands to save the ansible ssh key in the ssh-agent
+
+    eval "$(ssh-agent -s)"
+    ssh-add ~/.ssh/ansible_id_rsa
+
+3. Must enter the passphrase for "ansible_id_rsa" after running the 2nd command.
+4. Run "configure_hosts.yml" playbook as shown below
+
+    ansible-playbook configure_hosts.yml
+
+5. The server is now configured.
+
+Now run any other playbook/roles to configure the server with applications.
 
 <h1>TODO:</h1>
 
